@@ -9,11 +9,16 @@ for f in ['concepts_m2_m4.json', 'concepts_m5_m7.json']:
     fp = S / 'cloud' / f
     if fp.exists(): cons += json.loads(fp.read_text(encoding='utf-8'))
 cons.sort(key=lambda c: c['module'])
-data = 'window.CLOUD_QS = ' + json.dumps(qs, ensure_ascii=False).replace('</', '<' + BS + '/') + ';' + chr(10) + 'window.CLOUD_CONCEPTS = ' + json.dumps(cons, ensure_ascii=False).replace('</', '<' + BS + '/') + ';'
+dgm = {}
+for f in ['diagrams_m2_m3.json', 'diagrams_m4_m5.json', 'diagrams_m6_m7.json']:
+    fp = S / 'cloud' / f
+    if fp.exists():
+        for d in json.loads(fp.read_text(encoding='utf-8')): dgm[d['id']] = d.get('figs', [])
+data = 'window.CLOUD_QS = ' + json.dumps(qs, ensure_ascii=False).replace('</', '<' + BS + '/') + ';' + chr(10) + 'window.CLOUD_CONCEPTS = ' + json.dumps(cons, ensure_ascii=False).replace('</', '<' + BS + '/') + ';' + chr(10) + 'window.CLOUD_DIAGRAMS = ' + json.dumps(dgm, ensure_ascii=False).replace('</', '<' + BS + '/') + ';'
 js = (H / 'app.js').read_text(encoding='utf-8').replace('</script', '<' + BS + '/script')
-page = (H / 'page.html').read_text(encoding='utf-8').replace('/*DATA*/', data).replace('/*SCRIPT*/', js)
+page = (H / 'page.html').read_text(encoding='utf-8').replace('/*KIT*/', (S / 'cloud' / 'diagram_kit' / 'kit.css').read_text(encoding='utf-8')).replace('/*DATA*/', data).replace('/*SCRIPT*/', js)
 (H / 'cloud_cbt.html').write_text(page, encoding='utf-8')
 head, rest = page.split('<style>', 1); css, body = rest.split('</style>', 1)
 full = '<!doctype html>\n<html lang="ko">\n<head>\n<meta charset="utf-8">\n' + head + '<style>' + css + '</style>\n</head>\n<body>' + body + '</body>\n</html>\n'
 (H / 'index.html').write_text(full, encoding='utf-8')
-print('built', len(page), 'questions', len(qs), 'concept modules', len(cons))
+print('built', len(page), 'questions', len(qs), 'concept modules', len(cons), 'diagram sections', len(dgm), 'figs', sum(len(v) for v in dgm.values()))

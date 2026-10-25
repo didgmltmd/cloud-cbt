@@ -1,0 +1,34 @@
+/* 개념 도식 키트 — 모든 그림이 같은 모양으로 보이게 하는 공통 클래스 (SVG 안에서 class 로 사용) */
+.dg { margin: 6px 0 18px; padding: 14px 12px 10px; background: #fbfbfc; border: 1px solid #e3e7eb; border-radius: 10px; }
+.dg svg { display: block; width: 100%; height: auto; max-width: 100%; font-family: "Noto Sans KR", "Amazon Ember", system-ui, sans-serif; overflow: visible; }
+.dg figcaption { margin-top: 8px; font-size: 13px; color: #5f6b7a; text-align: center; line-height: 1.5; }
+.dg svg text { dominant-baseline: middle; }
+.dg .t  { font-size: 13px; fill: #16191f; }
+.dg .tb { font-size: 13px; font-weight: 700; fill: #16191f; }
+.dg .ts { font-size: 11.5px; fill: #5f6b7a; }
+.dg .th { font-size: 14px; font-weight: 800; fill: #16191f; }
+.dg .tw { font-size: 12.5px; font-weight: 700; fill: #ffffff; }
+.dg .to { font-size: 12.5px; font-weight: 700; fill: #c45500; }
+.dg .tg { font-size: 12.5px; font-weight: 700; fill: #037f0c; }
+.dg .tr { font-size: 12.5px; font-weight: 700; fill: #d91515; }
+.dg .cloud  { fill: #ffffff; stroke: #232f3e; stroke-width: 1.5; }
+.dg .region { fill: #f7f8f9; stroke: #00a4a6; stroke-width: 1.5; stroke-dasharray: 6 4; }
+.dg .az     { fill: none; stroke: #0972d3; stroke-width: 1.5; stroke-dasharray: 5 4; }
+.dg .vpc    { fill: none; stroke: #8c4fff; stroke-width: 2; }
+.dg .pub    { fill: #eef7e2; stroke: #7aa116; stroke-width: 1.2; }
+.dg .priv   { fill: #e8f2fb; stroke: #0972d3; stroke-width: 1.2; }
+.dg .box    { fill: #ffffff; stroke: #aab7c4; stroke-width: 1.2; }
+.dg .soft   { fill: #f2f3f3; stroke: none; }
+.dg .hl     { fill: #fff4e5; stroke: #ff9900; stroke-width: 2; }
+.dg .ok     { fill: #f2fcf3; stroke: #037f0c; stroke-width: 1.4; }
+.dg .bad    { fill: #fff7f7; stroke: #d91515; stroke-width: 1.4; }
+.dg .svc { stroke: none; }
+.dg .compute { fill: #ed7100; } .dg .storage { fill: #7aa116; } .dg .database { fill: #c925d1; }
+.dg .network { fill: #8c4fff; } .dg .security { fill: #dd344c; } .dg .integration { fill: #e7157b; }
+.dg .mgmt { fill: #e7157b; } .dg .user { fill: #232f3e; } .dg .generic { fill: #5f6b7a; }
+.dg .ln    { fill: none; stroke: #5f6b7a; stroke-width: 1.6; }
+.dg .ln-hl { fill: none; stroke: #ec7211; stroke-width: 2.4; }
+.dg .ln-ok { fill: none; stroke: #037f0c; stroke-width: 2; }
+.dg .ln-bad{ fill: none; stroke: #d91515; stroke-width: 2; }
+.dg .dash  { stroke-dasharray: 5 4; }
+.dg .ah    { fill: #5f6b7a; } .dg .ah-hl { fill: #ec7211; } .dg .ah-ok { fill: #037f0c; } .dg .ah-bad { fill: #d91515; }

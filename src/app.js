@@ -3,6 +3,7 @@
   'use strict';
   const Q = window.CLOUD_QS || [];
   const C = window.CLOUD_CONCEPTS || [];
+  const DG = window.CLOUD_DIAGRAMS || {};
   const MODS = [2, 3, 4, 5, 6, 7];
   const MT = { 2: '아키텍팅 소개 · 글로벌 인프라', 3: '액세스 보안 (IAM)', 4: '스토리지 계층 (S3)', 5: '컴퓨팅 계층 (EC2)', 6: '데이터베이스 계층', 7: '네트워킹 (VPC)' };
   const MOD = Object.fromEntries(MODS.map(m => [m, `모듈 ${m} · ${MT[m]}`]));
@@ -126,7 +127,7 @@
           <header class="chead"><p class="eyebrow">모듈 ${cm.module}</p><h1>${esc(cm.title || MT[cm.module])}</h1><p class="sub">${esc(cm.summary || '')}</p>
             <div class="hero-a"><button class="btn pri" data-go="pm" data-m="${cm.module}">모듈 ${cm.module} 문제 풀기 (${x.n})</button><span class="muted">푼 문제 ${x.d} · 정답률 ${pctTxt(x)}</span></div></header>
           ${cm.sections.map(s => { const n = qOfSec(Object.assign({ module: cm.module }, s)).length; return `<article class="ccard" id="sec-${esc(s.id)}">
-            <h2>${esc(s.title)}</h2><div class="md">${md(s.body)}</div>
+            <h2>${esc(s.title)}</h2>${(DG[s.id] || []).map(f => `<figure class="dg">${f.svg}${f.caption ? `<figcaption>${esc(f.caption)}</figcaption>` : ''}</figure>`).join('')}<div class="md">${md(s.body)}</div>
             ${s.tip ? `<div class="ctip"><b>시험 포인트</b><div>${inl(s.tip)}</div></div>` : ''}
             <div class="cfoot"><div class="tags">${(s.tags || []).slice(0, 6).map(t => `<span class="chip">${esc(t)}</span>`).join('')}</div>${n ? `<button class="btn" data-go="ps" data-sec="${esc(s.id)}">이 주제 문제 풀기 (${n})</button>` : ''}</div>
           </article>`; }).join('')}
