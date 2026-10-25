@@ -4,6 +4,7 @@
   const Q = window.CLOUD_QS || [];
   const C = window.CLOUD_CONCEPTS || [];
   const DG = window.CLOUD_DIAGRAMS || {};
+  const MI = window.CLOUD_MODICON || {};
   const MODS = [2, 3, 4, 5, 6, 7];
   const MT = { 2: '아키텍팅 소개 · 글로벌 인프라', 3: '액세스 보안 (IAM)', 4: '스토리지 계층 (S3)', 5: '컴퓨팅 계층 (EC2)', 6: '데이터베이스 계층', 7: '네트워킹 (VPC)' };
   const MOD = Object.fromEntries(MODS.map(m => [m, `모듈 ${m} · ${MT[m]}`]));
@@ -96,7 +97,7 @@
       <div class="mgrid">${MODS.map(m => {
         const x = by(m); const cm = C.find(c => c.module === m); const p = x.n ? x.d / x.n * 100 : 0;
         return `<article class="mcard">
-          <div class="mtop"><span class="mno">${m}</span><div><div class="mlbl">모듈 ${m}</div><h3>${esc(MT[m])}</h3></div></div>
+          <div class="mtop">${MI[m] ? `<svg class="micon" viewBox="0 0 64 64" aria-hidden="true"><use href="#${MI[m]}"/></svg>` : `<span class="mno">${m}</span>`}<div><div class="mlbl">모듈 ${m}</div><h3>${esc(MT[m])}</h3></div></div>
           ${cm ? `<p class="msum">${esc(cm.summary || '')}</p><div class="topics">${(cm.sections || []).slice(0, 4).map(s => `<button class="tpc" data-sec="${esc(s.id)}">${esc(s.title)}</button>`).join('')}${(cm.sections || []).length > 4 ? `<span class="more">+${cm.sections.length - 4}</span>` : ''}</div>` : ''}
           <div class="mprog"><div class="bar" role="img" aria-label="진도 ${Math.round(p)}%"><i style="width:${p}%"></i></div><span>${x.d}/${x.n}문항 · 정답률 ${pctTxt(x)}</span></div>
           <div class="macts">${cm ? `<button class="btn" data-go="concept" data-m="${m}">개념 정리</button>` : ''}<button class="btn pri" data-go="pm" data-m="${m}">문제 풀기</button></div>
@@ -122,9 +123,9 @@
       ${backTo ? `<div class="backbar"><button class="btn" data-a="backq">← 풀던 문제로 돌아가기</button><span>문제 ${backTo.i + 1} / ${backTo.list.length}</span></div>` : ''}
       <nav class="mchips" aria-label="모듈">${C.map(c => `<button class="mchip${c.module === cm.module ? ' on' : ''}" data-go="concept" data-m="${c.module}"><b>${c.module}</b> ${esc(MT[c.module] || c.title)}</button>`).join('')}</nav>
       <div class="cgrid">
-        <aside class="ctoc"><div class="ctoc-h">모듈 ${cm.module} 목차</div>${cm.sections.map(s => `<a href="#" data-sec="${esc(s.id)}">${esc(s.title)}</a>`).join('')}</aside>
+        <aside class="ctoc"><div class="ctoc-h">모듈 ${cm.module} 목차</div>${cm.sections.map((s, i) => `<a href="#" data-sec="${esc(s.id)}"><span class="n">${i + 1}</span><span>${esc(s.title)}</span></a>`).join('')}<div class="prog" id="cprog"></div></aside>
         <div class="cmain">
-          <header class="chead"><p class="eyebrow">모듈 ${cm.module}</p><h1>${esc(cm.title || MT[cm.module])}</h1><p class="sub">${esc(cm.summary || '')}</p>
+          <header class="chead"><div class="chead-t">${MI[cm.module] ? `<svg class="micon" viewBox="0 0 64 64" aria-hidden="true"><use href="#${MI[cm.module]}"/></svg>` : ''}<div><p class="eyebrow">모듈 ${cm.module}</p><h1>${esc(cm.title || MT[cm.module])}</h1></div></div><p class="sub">${esc(cm.summary || '')}</p>
             <div class="hero-a"><button class="btn pri" data-go="pm" data-m="${cm.module}">모듈 ${cm.module} 문제 풀기 (${x.n})</button><span class="muted">푼 문제 ${x.d} · 정답률 ${pctTxt(x)}</span></div></header>
           ${cm.sections.map(s => { const n = qOfSec(Object.assign({ module: cm.module }, s)).length; return `<article class="ccard" id="sec-${esc(s.id)}">
             <h2>${esc(s.title)}</h2>${(DG[s.id] || []).map(f => `<figure class="dg">${f.svg}${f.caption ? `<figcaption>${esc(f.caption)}</figcaption>` : ''}</figure>`).join('')}<div class="md">${md(s.body)}</div>
@@ -135,7 +136,25 @@
         </div>
       </div></div>`;
     if (secId) { const el = document.getElementById('sec-' + secId); if (el) { el.scrollIntoView({ block: 'start' }); el.classList.add('flash'); } } else window.scrollTo(0, 0);
+    spy();
   }
+  /* 목차: 지금 보고 있는 섹션 표시 */
+  let spyT = 0;
+  function spy() {
+    const cards = [...app.querySelectorAll('.ccard')]; if (!cards.length) return;
+    const line = 140 + (document.querySelector('.backbar') ? 50 : 0);
+    let cur = cards[0];
+    for (const c of cards) { if (c.getBoundingClientRect().top - line <= 0) cur = c; }
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) cur = cards[cards.length - 1];
+    const id = cur.id.replace(/^sec-/, ''); const idx = cards.indexOf(cur);
+    cards.forEach(c => c.classList.toggle('cur', c === cur));
+    app.querySelectorAll('.ctoc a[data-sec]').forEach((a, i) => { a.classList.toggle('on', a.dataset.sec === id); a.classList.toggle('seen', i < idx); if (a.dataset.sec === id) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current'); });
+    const on = app.querySelector('.ctoc a.on'); const toc = app.querySelector('.ctoc');
+    if (on && toc && toc.scrollHeight > toc.clientHeight) { const r = on.getBoundingClientRect(), tr = toc.getBoundingClientRect(); if (r.top < tr.top + 30 || r.bottom > tr.bottom - 30) toc.scrollTop += r.top - tr.top - tr.height / 2; }
+    const pg = document.getElementById('cprog'); if (pg) pg.innerHTML = `${idx + 1} / ${cards.length} 섹션<div class="bar"><i style="width:${(idx + 1) / cards.length * 100}%"></i></div>`;
+  }
+  window.addEventListener('scroll', () => { if (view !== 'concept' || spyT) return; spyT = setTimeout(() => { spyT = 0; spy(); }, 50); }, { passive: true });
+  window.addEventListener('resize', () => { if (view === 'concept') spy(); });
 
   /* ---------- 연습 설정 ---------- */
   let PF = st.get('pf', { mods: [], lv: '', only: '' });
@@ -271,7 +290,7 @@
     const rel = t.closest('[data-rel]'); if (rel) { backTo = S; concepts(null, rel.dataset.rel); return; }
     const pm = t.closest('[data-pm]'); if (pm) { const m = +pm.dataset.pm; PF.mods = PF.mods.includes(m) ? PF.mods.filter(x => x !== m) : PF.mods.concat(m); st.set('pf', PF); practiceSetup(); return; }
     const pf = t.closest('[data-pf]'); if (pf) { PF[pf.dataset.pf] = pf.dataset.v; st.set('pf', PF); practiceSetup(); return; }
-    const sec = t.closest('[data-sec]'); if (sec && !t.closest('[data-go]')) { e.preventDefault(); if (view === 'concept' && document.getElementById('sec-' + sec.dataset.sec)) { const el = document.getElementById('sec-' + sec.dataset.sec); el.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); } else concepts(null, sec.dataset.sec); return; }
+    const sec = t.closest('[data-sec]'); if (sec && !t.closest('[data-go]')) { e.preventDefault(); if (view === 'concept' && document.getElementById('sec-' + sec.dataset.sec)) { const el = document.getElementById('sec-' + sec.dataset.sec); el.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); app.querySelectorAll('.ctoc a[data-sec]').forEach(a => a.classList.toggle('on', a.dataset.sec === sec.dataset.sec)); } else concepts(null, sec.dataset.sec); return; }
     const rv = t.closest('[data-rv]'); if (rv) { S.mode = 'result'; S.i = +rv.dataset.rv; S.review = false; renderResultQ(); return; }
     const g = t.closest('[data-go]');
     if (g) {
