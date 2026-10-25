@@ -426,7 +426,7 @@ window.CLOUD_MODICON = {"2": "awsi-AWSWellArchitectedTool", "3": "awsi-AWSIdenti
     S = null; clearInterval(clockT); setTabs('concept'); document.title = '개념 정리 · AWS 클라우드 CBT';
     if (!C.length) { app.innerHTML = '<div class="wrap"><p class="sub">개념 정리를 준비하고 있어요.</p></div>'; return; }
     if (secId) { const s = SECS.find(x => x.id === secId); if (s) m = s.module; }
-    m = m || st.get('cmod', C[0].module); st.set('cmod', m);
+    m = m || st.get('cmod', C[0].module); st.set('cmod', m); curMod = +m;
     const cm = C.find(c => c.module === +m) || C[0];
     const { by } = stats(); const x = by(cm.module);
     app.innerHTML = `<div class="cwrap">
@@ -491,9 +491,14 @@ window.CLOUD_MODICON = {"2": "awsi-AWSWellArchitectedTool", "3": "awsi-AWSIdenti
     Object.keys(per).forEach(m => { const qs = Q.filter(q => q.module === +m); const b = shuffle(qs.filter(q => q.level === 'basic')), s = shuffle(qs.filter(q => q.level === 'saa')); const n = per[m], nb = Math.ceil(n / 2); out = out.concat(b.slice(0, nb), s.slice(0, n - nb)); });
     return shuffle(out);
   }
-  function startExam(mode, list, label) {
+  // 문제를 어디서 시작했는지 기억 → 나가기/끝내기/뒤로 가기 때 그 자리로
+  let origin = null, curMod = null;
+  const ORIGIN_LABEL = { concept: '개념 정리로', home: '홈으로', practice: '연습 설정으로', mock: '모의고사 안내로', wrong: '홈으로' };
+  function startExam(mode, list, label, sec) {
     if (!list.length) { ask('조건에 맞는 문제가 없어요', '다른 조건을 골라 보세요.', '확인', true); return; }
     backTo = null;
+    origin = { view, m: curMod, sec: sec || null, y: window.scrollY };
+    try { history.pushState({ cbt: 'exam' }, ''); } catch (e) { }
     S = { mode, list, i: 0, ans: {}, flag: {}, checked: {}, t0: Date.now(), review: false, label: label || '' };
     if (mode === 'mock') { clearInterval(clockT); clockT = setInterval(drawClock, 1000); }
     render();
@@ -507,7 +512,7 @@ window.CLOUD_MODICON = {"2": "awsi-AWSWellArchitectedTool", "3": "awsi-AWSIdenti
     const q = S.list[S.i]; const a = S.ans[q.id] || []; const mock = S.mode === 'mock'; const done = !mock && S.checked[q.id];
     const right = done && same(a, q.answer);
     document.title = `${S.i + 1}/${S.list.length} · AWS 클라우드 CBT`;
-    topr.innerHTML = (mock ? '<span class="clock" id="clk"></span>' : `<span class="mode-l">${esc(S.label || (S.mode === 'wrong' ? '오답노트' : '연습'))}</span>`) + `<button class="btn dark" data-a="${mock ? 'quit' : 'home'}">${mock ? '그만두기' : '나가기'}</button>`;
+    topr.innerHTML = (mock ? '<span class="clock" id="clk"></span>' : `<span class="mode-l">${esc(S.label || (S.mode === 'wrong' ? '오답노트' : '연습'))}</span>`) + (mock ? '<button class="btn dark" data-a="quit">그만두기</button>' : `<button class="btn dark" data-a="exit">← ${esc(ORIGIN_LABEL[(origin || {}).view] || '나가기')}</button>`);
     const flagged = mock ? S.flag[q.id] : !!st.get('flag', {})[q.id];
     const opts = q.options.map((o, k) => {
       let c = a.includes(k) ? ' on' : '';
@@ -532,7 +537,7 @@ window.CLOUD_MODICON = {"2": "awsi-AWSWellArchitectedTool", "3": "awsi-AWSIdenti
     </div>
     <nav class="nav"><div class="in"><div class="g"><button class="btn" data-a="prev"${S.i === 0 ? ' disabled' : ''}>← 이전</button>${mock ? '<button class="btn" data-a="review">전체 검토</button>' : ''}</div>
       <span class="prog">${mock ? `답한 문제 ${answeredN} / ${S.list.length}` : `맞힘 ${okN} / 확인 ${chN}`}</span>
-      <div class="g">${!mock && !done ? `<button class="btn pri" data-a="check"${a.length === q.pick ? '' : ' disabled'}>정답 확인</button>` : ''}${S.i < S.list.length - 1 ? `<button class="btn${mock || done ? ' pri' : ''}" data-a="next">다음 →</button>` : mock ? '<button class="btn pri" data-a="review">검토 후 제출</button>' : '<button class="btn pri" data-a="home">끝내기</button>'}</div></div></nav>`;
+      <div class="g">${!mock && !done ? `<button class="btn pri" data-a="check"${a.length === q.pick ? '' : ' disabled'}>정답 확인</button>` : ''}${S.i < S.list.length - 1 ? `<button class="btn${mock || done ? ' pri' : ''}" data-a="next">다음 →</button>` : mock ? '<button class="btn pri" data-a="review">검토 후 제출</button>' : '<button class="btn pri" data-a="finish">끝내기</button>'}</div></div></nav>`;
     if (mock) drawClock();
     window.scrollTo(0, 0);
   }
@@ -592,6 +597,7 @@ window.CLOUD_MODICON = {"2": "awsi-AWSWellArchitectedTool", "3": "awsi-AWSIdenti
     render();
   }
   app.addEventListener('click', onClick); topr.addEventListener('click', onClick); tabs.addEventListener('click', onClick);
+  document.querySelector('.brand').addEventListener('click', () => { if (S && S.mode !== 'result' && origin) { const qb = topr.querySelector('[data-a="quit"]'); if (qb) qb.click(); else goBack(); } else { examMode(false); home(); } });
   app.addEventListener('change', e => { });
   function onClick(e) {
     const t = e.target;
@@ -610,15 +616,17 @@ window.CLOUD_MODICON = {"2": "awsi-AWSWellArchitectedTool", "3": "awsi-AWSIdenti
       if (v === 'mockstart') { startExam('mock', mockSet()); return; }
       if (v === 'concept') { concepts(+g.dataset.m); return; }
       if (v === 'pm') { const m = +g.dataset.m; startExam('practice', shuffle(Q.filter(q => q.module === m)), `모듈 ${m} 연습`); return; }
-      if (v === 'ps') { const s = SECS.find(x => x.id === g.dataset.sec); if (s) startExam('practice', shuffle(qOfSec(s)), s.title); return; }
+      if (v === 'ps') { const s = SECS.find(x => x.id === g.dataset.sec); if (s) startExam('practice', shuffle(qOfSec(s)), s.title, s.id); return; }
       if (v === 'practice') { startExam('practice', shuffle(practiceList()), '연습'); return; }
       if (v === 'wrong') { startWrong(); return; }
       if (v === 'reset') { ask('기록을 모두 지울까요?', '푼 기록, 검토 표시, 모의고사 기록이 사라져요.', '모두 지우기').then(y => { if (!y) return; ['res', 'flag', 'hist'].forEach(k => { try { localStorage.removeItem('cloudcbt.' + k); } catch (x) { } }); home(); }); return; }
     }
     const b = t.closest('[data-a]'); if (!b) return; const a = b.dataset.a;
     if (a === 'home') { examMode(false); home(); }
+    else if (a === 'exit') goBack();
+    else if (a === 'finish') { const okN = S.list.filter(x => S.checked[x.id] && same(S.ans[x.id] || [], x.answer)).length, chN = S.list.filter(x => S.checked[x.id]).length; ask(`${chN}문제 중 ${okN}문제 맞혔어요`, okN < chN ? '틀린 문제는 오답노트에 모여 있어요.' : '모두 맞혔어요!', (ORIGIN_LABEL[(origin || {}).view] || '홈으로').replace(/로$/, '로 돌아가기'), true).then(() => goBack()); }
     else if (a === 'backq') { const s = backTo; backTo = null; S = s; render(); }
-    else if (a === 'quit') { ask('모의고사를 그만둘까요?', '답한 내용은 저장되지 않아요.', '그만두기').then(y => { if (y) { examMode(false); home(); } }); }
+    else if (a === 'quit') { ask('모의고사를 그만둘까요?', '답한 내용은 저장되지 않아요.', '그만두기').then(y => { if (y) goBack(); }); }
     else if (a === 'prev' && S.i > 0) { S.i--; S.mode === 'result' ? renderResultQ() : render(); }
     else if (a === 'next' && S.i < S.list.length - 1) { S.i++; S.mode === 'result' ? renderResultQ() : render(); }
     else if (a === 'check') check();
@@ -628,6 +636,20 @@ window.CLOUD_MODICON = {"2": "awsi-AWSWellArchitectedTool", "3": "awsi-AWSIdenti
     else if (a === 'result') submitView();
     else if (a === 'flag') { const q = S.list[S.i]; if (S.mode === 'mock') { S.flag[q.id] = b.checked; } else { const f = st.get('flag', {}); if (b.checked) f[q.id] = 1; else delete f[q.id]; st.set('flag', f); } }
   }
+  function goBack(fromPop) {
+    const o = origin || { view: 'home' }; origin = null; clearInterval(clockT); examMode(false); S = null;
+    if (!fromPop) { try { if (history.state && history.state.cbt === 'exam') history.back(); } catch (e) { } }
+    if (o.view === 'concept') {
+      concepts(o.m || undefined);
+      const el = o.sec && document.getElementById('sec-' + o.sec);
+      if (el) { el.scrollIntoView({ block: 'start' }); el.classList.add('flash'); } else window.scrollTo(0, o.y || 0);
+      spy();
+    } else if (o.view === 'practice') { practiceSetup(); }
+    else if (o.view === 'mock') { mockIntro(); }
+    else { home(); window.scrollTo(0, o.y || 0); }
+  }
+  // 브라우저 뒤로 가기 = 나가기
+  window.addEventListener('popstate', () => { if (S && S.mode !== 'result' && origin) { if (S.mode === 'mock') { try { history.pushState({ cbt: 'exam' }, ''); } catch (e) { } const qb = topr.querySelector('[data-a="quit"]'); if (qb) qb.click(); } else goBack(true); } });
   function startWrong() { const res = st.get('res', {}), f = st.get('flag', {}); const list = Q.filter(q => res[q.id] === false || f[q.id]); if (!list.length) { setTabs('wrong'); ask('오답노트가 비어 있어요', '틀린 문제나 검토 표시한 문제가 생기면 여기서 다시 풀 수 있어요.', '확인', true).then(() => home()); return; } startExam('wrong', shuffle(list), '오답노트'); }
   let lastResult = null;
   function renderResultQ() { lastResult = lastResult || app.innerHTML; S.checked = Object.fromEntries(S.list.map(q => [q.id, true])); const keep = S.mode; S.mode = 'practice'; render(); S.mode = keep; topr.innerHTML = '<button class="btn dark" data-a="result">결과로 돌아가기</button>'; const nav = app.querySelector('.nav .g:last-child'); if (nav && S.i === S.list.length - 1) nav.innerHTML = '<button class="btn pri" data-a="result">결과로 돌아가기</button>'; }
