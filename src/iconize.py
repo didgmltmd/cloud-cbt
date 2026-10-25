@@ -48,7 +48,7 @@ MAP = [
     (r'SNS', 'architecture-service/AmazonSimpleNotificationService'),
     (r'Athena', 'architecture-service/AmazonAthena'),
     (r'Transfer Family', 'architecture-service/AWSTransferFamily'),
-    (r'^Compute$', 'architecture-service/AWSComputeOptimizer'),
+    (r'^Compute$|Compute Optimizer', 'architecture-service/AWSComputeOptimizer'),
     (r'FSx', 'architecture-service/AmazonFSxforWFS'),
     (r'EFS', 'architecture-service/AmazonEFS'),
     (r'EBS|gp2|gp3|io1|io2|st1|sc1|스냅샷', 'architecture-service/AmazonElasticBlockStore'),
@@ -92,29 +92,36 @@ def tw(label):
     return w
 
 CHIP = re.compile(r'<rect\b(?P<ra>[^>]*\bclass="svc (?P<cat>[a-z]+)"[^>]*)/>(?P<ws>\s*)<text\b(?P<ta>[^>]*\bclass="tw"[^>]*)>(?P<label>[^<]+)</text>')
+TEXT = re.compile(r'<text\b([^>]*)>')
 def attr(s, k):
     m = re.search(r'\b' + k + r'="([-\d.]+)"', s)
     return float(m.group(1)) if m else None
 
 def iconize(svg, used, stats):
+    # 칩 안에 들어 있는 글자 개수 (두 줄 칩은 아이콘을 넣지 않음)
+    texts = [(attr(t, 'x'), attr(t, 'y')) for t in TEXT.findall(svg)]
+    def inside(x, y, w, h):
+        return sum(1 for tx, ty in texts if tx is not None and ty is not None and x <= tx <= x + w and y <= ty <= y + h)
     def rep(m):
         label = m.group('label').strip()
         ic = next((p for rx, p in MAP if rx.search(label)), None)
         x, y, w, h = (attr(m.group('ra'), k) for k in ('x', 'y', 'width', 'height'))
         if ic is None or None in (x, y, w, h) or 'transform' in m.group('ra') or 'transform' in m.group('ta'):
             stats['skip'] += 1; return m.group(0)
-        s = max(16, min(h - 8, 26))
-        if tw(label) + s + 22 > w:
-            s = min(18, h - 6)
-            if tw(label) + s + 16 > w:
-                stats['nofit'] += 1; return m.group(0)
-            stats['small'] = stats.get('small', 0) + 1
-        ix, iy = x + 5, y + (h - s) / 2
-        nx = round((ix + s + 3 + x + w) / 2, 1)
+        if inside(x, y, w, h) > 1 or h > 56 or h < 22:
+            stats['multi'] = stats.get('multi', 0) + 1; return m.group(0)
+        s = max(16, min(h - 10, 24))
+        gw = s + 6 + tw(label)
+        if gw > w - 8:
+            s = min(18, h - 8); gw = s + 6 + tw(label)
+            if gw > w - 8: stats['nofit'] += 1; return m.group(0)
+        start = x + (w - gw) / 2; iy = y + (h - s) / 2
+        nx = round(start + s + 6 + tw(label) / 2, 1)
         ta = re.sub(r'\bx="[-\d.]+"', f'x="{nx}"', m.group('ta'), count=1)
         used.add(ic); stats['ok'] += 1
-        return (f'<rect{m.group("ra")}/>{m.group("ws")}<rect x="{ix}" y="{iy}" width="{s}" height="{s}" rx="4" fill="#fff"/>'
-                f'<use href="#{sym_id(ic)}" x="{ix + 1.5}" y="{iy + 1.5}" width="{s - 3}" height="{s - 3}"/>'
+        return (f'<rect{m.group("ra")}/>{m.group("ws")}<g class="ico" data-x="{x}" data-w="{w}" data-s="{s}">'
+                f'<rect x="{round(start,1)}" y="{iy}" width="{s}" height="{s}" rx="4" fill="#fff"/>'
+                f'<use href="#{sym_id(ic)}" x="{round(start + 1.5,1)}" y="{iy + 1.5}" width="{s - 3}" height="{s - 3}"/></g>'
                 f'<text{ta}>{m.group("label")}</text>')
     return CHIP.sub(rep, svg)
 

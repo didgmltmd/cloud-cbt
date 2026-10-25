@@ -137,6 +137,21 @@
       </div></div>`;
     if (secId) { const el = document.getElementById('sec-' + secId); if (el) { el.scrollIntoView({ block: 'start' }); el.classList.add('flash'); } } else window.scrollTo(0, 0);
     spy();
+    layoutIcons(app); if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (view === 'concept') layoutIcons(app); });
+  }
+  /* 그림 속 서비스 칩: 실제 글자 폭을 재서 아이콘+글자를 칩 가운데에 */
+  function layoutIcons(rootEl) {
+    rootEl.querySelectorAll('g.ico').forEach(g => {
+      const t = g.nextElementSibling; if (!t || t.tagName.toLowerCase() !== 'text' || !t.getComputedTextLength) return;
+      const len = t.getComputedTextLength(); if (!len) return;
+      const cx = +g.dataset.x, cw = +g.dataset.w, s = +g.dataset.s, gap = 6;
+      const gw = s + gap + len;
+      if (gw > cw - 10) { g.style.display = 'none'; t.setAttribute('x', cx + cw / 2); return; }
+      g.style.display = '';
+      const start = cx + (cw - gw) / 2; const [r, u] = g.children;
+      r.setAttribute('x', start); u.setAttribute('x', start + 1.5);
+      t.setAttribute('x', start + s + gap + len / 2);
+    });
   }
   /* 목차: 지금 보고 있는 섹션 표시 */
   let spyT = 0;
