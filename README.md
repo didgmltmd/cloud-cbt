@@ -6,6 +6,6 @@ AWS Academy Cloud Architecting 모듈 2~7 중간고사 대비 문제은행(269�
 - **연습 모드**: 모듈 · 난이도 필터, 보기마다 맞고 틀린 이유 해설
 - **오답노트**: 틀린 문제 · 검토 표시 문제 다시 풀기
 
-사이트: https://didgmltmd.github.io/cloud-cbt/
+사이트: https://learningmate-lab.github.io/cloud-cbt/
 
 문제는 수업 자료를 바탕으로 새로 쓴 연습 문제예요.
