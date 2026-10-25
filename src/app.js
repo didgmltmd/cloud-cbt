@@ -113,6 +113,7 @@
 
   /* ---------- 개념 정리 ---------- */
   function concepts(m, secId) {
+    window.LMTrack && window.LMTrack.event('concept'); 
     S = null; clearInterval(clockT); setTabs('concept'); document.title = '개념 정리 · AWS 클라우드 CBT';
     if (!C.length) { app.innerHTML = '<div class="wrap"><p class="sub">개념 정리를 준비하고 있어요.</p></div>'; return; }
     if (secId) { const s = SECS.find(x => x.id === secId); if (s) m = s.module; }
@@ -257,6 +258,7 @@
     drawClock(); window.scrollTo(0, 0);
   }
   function submit() {
+    window.LMTrack && window.LMTrack.event('mock'); 
     clearInterval(clockT); examMode(false); setTabs('mock');
     const qs = S.list; const res = st.get('res', {});
     qs.forEach(q => { res[q.id] = same(S.ans[q.id] || [], q.answer); }); st.set('res', res);
@@ -296,6 +298,7 @@
     S.ans[q.id] = a; render();
   }
   function check() {
+    window.LMTrack && window.LMTrack.event('check'); 
     const q = S.list[S.i]; const a = S.ans[q.id] || []; if (a.length !== q.pick) return;
     S.checked[q.id] = true; const res = st.get('res', {}); res[q.id] = same(a, q.answer); st.set('res', res);
     if (res[q.id] && S.mode === 'wrong') { const f = st.get('flag', {}); delete f[q.id]; st.set('flag', f); }
